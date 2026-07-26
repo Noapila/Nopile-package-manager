@@ -25,7 +25,7 @@ static std::string trim(const std::string& s) {
 }
 
 bool db_download() {
-    std::string url = std::string(NOPILE_REPO_RAW) + "/nopile.db";
+    std::string url = std::string(NOPILE_REPO_RAW) + "/sync/nopile.db";
     fs::create_directories(fs::path(NOPILE_DB).parent_path());
     return net_download(url, fs::path(NOPILE_DB));
 }
