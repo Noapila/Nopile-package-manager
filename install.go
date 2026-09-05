@@ -25,7 +25,6 @@ type nopbuild struct {
 	ConfigDirs  []string
 }
 
-// Exécute une commande shell et affiche la sortie en temps réel
 func runCmd(cmd string, dir string) bool {
 	parts := strings.Fields(cmd)
 	c := exec.Command(parts[0], parts[1:]...)
@@ -228,7 +227,6 @@ func readNopbuild(path string) (*nopbuild, error) {
 }
 
 func installCompile(name string, force bool, reinstall bool) bool {
-	// 1. Chercher dans le db
 	pkg := dbFind(name)
 	if pkg == nil {
 		fmt.Println(ColorRed + "error:", ColorReset + "package not found:", name)
@@ -241,8 +239,6 @@ func installCompile(name string, force bool, reinstall bool) bool {
 	}
 
 	vlog("preparing compilation for:", name)
-
-	// Chemins
 	srcDir  := "/var/tmp/nopile/sources/" + name
 	rootDir := srcDir + "/root"
 
@@ -253,10 +249,8 @@ func installCompile(name string, force bool, reinstall bool) bool {
 		return false
 	}
 
-	// 6. Créer root/
 	os.MkdirAll(rootDir, 0755)
 
-	// [BUILD] → toujours lancer, make est intelligent
 	vlog(ColorGray + "executing nopbuild" + ColorReset)
 	skippedConfigure := false
 
@@ -300,7 +294,6 @@ func installCompile(name string, force bool, reinstall bool) bool {
 		}
 	}
 
-	// [INSTALL] → toujours vider root/ et recommencer proprement
 	vlog(ColorGray + "cleaning root/..." + ColorReset)
 	os.RemoveAll(rootDir)
 	os.MkdirAll(rootDir, 0755)
@@ -315,7 +308,6 @@ func installCompile(name string, force bool, reinstall bool) bool {
 		}
 	}
 
-	// 8. Scanner root/
 	vlog(ColorGray + "scanning files..." + ColorReset)
 	var installedFiles []string
 	var installedDirs  []string
