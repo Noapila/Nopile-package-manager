@@ -174,10 +174,9 @@ func installBinary(name string, force bool, reinstall bool) bool {
 		fmt.Println(ColorRed + "error:", ColorReset + ".nopile not found in package")
 		return false
 	}
-	fmt.Printf("DEBUG: writing .nopile to %s\n", NOPILE_PKG_DIR+"/"+name+".nopile")
 	err = os.WriteFile(NOPILE_PKG_DIR+"/"+name+".nopile", data, 0644)
 	if err != nil {
-		fmt.Printf("DEBUG: write failed: %v\n", err)
+		fmt.Printf("%v\n", err)
 		fmt.Println(ColorRed + "fatal:", ColorReset + "failed to install .nopile")
 		return false
 	}

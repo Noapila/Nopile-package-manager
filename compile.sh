@@ -61,7 +61,7 @@ echo "==> [3/4] Creating install.sh"
 cat > install.sh << 'EOF'
 #!/bin/bash
 echo "==> Installing Nopile"
-mkdir -p /var/lib/nopile || exit 1
+mkdir -p /var/lib/nopile/packages || exit 1
 mkdir -p /var/tmp/nopile || exit 1
 mkdir -p /var/cache/nopile || exit 1
 cp ./nopile /usr/bin/nopile || exit 1
