@@ -125,6 +125,7 @@ func installBinary(name string, force bool, reinstall bool) bool {
 	// Vérifier les conflits
 	conflict := false
 	inConfig := false
+	inDirs := false
 	for _, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "[CONFIG]" { inConfig = true; continue }
