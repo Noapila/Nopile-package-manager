@@ -557,6 +557,7 @@ func findFileOwner(filePath string) string {
 }
 
 func copyFile(src string, dst string, perm os.FileMode) bool {
+	fmt.Printf("DEBUG: copyFile src=%s dst=%s\n", src, dst) // <-- ajoute ça
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return false
