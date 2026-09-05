@@ -55,7 +55,7 @@ fi
 
 echo "==> [2/4] Compiling Nopile"
 log "nopile-mini: CGO_ENABLED=0 ./go/bin/go build -ldflags="-s -w" -o nopile"
-CGO_ENABLED=0 ./go/bin/go build -ldflags="-s -w" -o nopile
+CGO_ENABLED=0 ./go/bin/go build -ldflags="-s -w" -o nopile || exit 1
 
 echo "==> [3/4] Creating install.sh"
 cat > install.sh << 'EOF'
