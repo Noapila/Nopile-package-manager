@@ -557,22 +557,37 @@ func findFileOwner(filePath string) string {
 }
 
 func copyFile(src string, dst string, perm os.FileMode) bool {
-	fmt.Printf("DEBUG: copyFile src=%s dst=%s\n", src, dst) // <-- ajoute ça
+	fmt.Printf("DEBUG: copyFile: open src %s\n", src)
 	srcFile, err := os.Open(src)
 	if err != nil {
+		fmt.Printf("DEBUG: copyFile: open src failed: %v\n", err)
 		return false
 	}
 	defer srcFile.Close()
 
-	os.MkdirAll(filepath.Dir(dst), 0755)
+	fmt.Printf("DEBUG: copyFile: mkdir for %s\n", dst)
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		fmt.Printf("DEBUG: copyFile: mkdir failed: %v\n", err)
+		return false
+	}
+
+	fmt.Printf("DEBUG: copyFile: open dst %s\n", dst)
 	dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
 	if err != nil {
+		fmt.Printf("DEBUG: copyFile: open dst failed: %v\n", err)
 		return false
 	}
 	defer dstFile.Close()
 
+	fmt.Printf("DEBUG: copyFile: copying...\n")
 	_, err = io.Copy(dstFile, srcFile)
-	return err == nil
+	if err != nil {
+		fmt.Printf("DEBUG: copyFile: copy failed: %v\n", err)
+		return false
+	}
+
+	fmt.Printf("DEBUG: copyFile: success\n")
+	return true
 }
 
 func downloadAll(toInstall []entry) bool {
