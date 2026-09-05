@@ -7,34 +7,48 @@ type group struct {
 	action  string
 }
 
-func parseInstall(args []string) ([]group, bool) {
+func parseInstall(args []string) ([]group, bool, bool) {
 	var groups []group
 	var courant []string
+	force := false
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
-
-		if arg == "--compile" || arg == "--binary" || arg == "--local" {
-			// Pas de paquets avant l'option
-			if len(courant) == 0 {
-				fmt.Println("error: invalid syntax")
-				fmt.Println("usage: nopile install <package> --binary|--compile|--local")
-				return nil, false
+		if arg == "--force" || arg == "-f" {
+			if force {
+				fmt.Println(ColorRed + "error:", ColorReset + "invalid syntax")
+				fmt.Println("usage: nopile install <package> --binary|--compile|--local [--force]")
+				return nil, false, false
 			}
-			// Fermer le groupe
-			action := arg[2:]   // "--compile" → "compile"
+			force = true
+			continue
+		}
+		if arg == "--compile" || arg == "-c" || arg == "--binary" || arg == "-b" || arg == "--local" || arg == "-l" {
+			if len(courant) == 0 {
+				fmt.Println(ColorRed + "error:", ColorReset + "invalid syntax")
+				fmt.Println("usage: nopile install <package> --binary|--compile|--local [--force]")
+				return nil, false, false
+			}
+			var action string
+			switch arg {
+				case "-c":
+					action = "compile"
+				case "-b":
+					action = "binary"
+				case "-l":
+					action = "local"
+				default:
+					// Pour les flags longs, on garde le comportement actuel
+					action = arg[2:]
+			}
 			groups = append(groups, group{packages: courant, action: action})
 			courant = []string{}
 		} else {
-			// C'est un paquet
 			courant = append(courant, arg)
 		}
 	}
-
-	// Des paquets sans option à la fin → binaire par défaut
 	if len(courant) > 0 {
 		groups = append(groups, group{packages: courant, action: "binary"})
 	}
-
-	return groups, true
+	return groups, true, force
 }

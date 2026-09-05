@@ -14,7 +14,7 @@ func netDownload(url string, dest string) bool {
 	// Étape 1 — découper l'URL
 	host, path := parseURL(url)
 
-	fmt.Println("connecting to", host)
+	vlog("connecting to", host)
 
 	// Étape 2 — connexion TCP
 	conn, err := tcpConnect(host)
@@ -35,7 +35,7 @@ func netDownload(url string, dest string) bool {
 		return false
 	}
 
-	fmt.Println("downloading", dest)
+	vlog("downloading", dest)
 
 	// Étape 5 — lire la réponse et écrire le fichier
 	err = readResponse(tlsConn, dest)
@@ -43,7 +43,7 @@ func netDownload(url string, dest string) bool {
 		return false
 	}
 
-	fmt.Println("done:", dest)
+	vlog("done:", dest)
 	return true
 }
 
@@ -67,14 +67,14 @@ func tcpConnect(host string) (net.Conn, error) {
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "no route to host") {
-			fmt.Println("error: no route to host", host)
+			fmt.Println(ColorRed + "error:", ColorReset + "no route to host", host)
 			fmt.Println("check your internet connection")
 		} else if strings.Contains(errMsg, "connection refused") {
-			fmt.Println("fatal: connection refused by", host)
+			fmt.Println(ColorRed + "fatal:", ColorReset + "connection refused by", host)
 		} else if strings.Contains(errMsg, "no such host") {
-			fmt.Println("fatal: host not found:", host)
+			fmt.Println(ColorRed + "fatal:", ColorReset + "host not found:", host)
 		} else {
-			fmt.Println("error: cannot connect to", host)
+			fmt.Println(ColorRed + "error:", ColorReset + "cannot connect to", host)
 			fmt.Println("check your internet connection")
 		}
 		return nil, err
@@ -91,19 +91,19 @@ func tlsHandshake(conn net.Conn, host string) (*tls.Conn, error) {
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "certificate") {
-			fmt.Println("fatal: invalid SSL certificate for", host)
+			fmt.Println(ColorRed + "fatal:", ColorReset + "invalid SSL certificate for", host)
 			fmt.Println("the server certificate may be expired or untrusted")
 		} else if strings.Contains(errMsg, "handshake failure") {
-			fmt.Println("fatal: TLS handshake failure with", host)
+			fmt.Println(ColorRed + "fatal:", ColorReset + "TLS handshake failure with", host)
 			fmt.Println("the server may not support TLS")
 		} else if strings.Contains(errMsg, "connection reset") {
-			fmt.Println("fatal: connection reset during TLS handshake")
+			fmt.Println(ColorRed + "fatal:", ColorReset + "connection reset during TLS handshake")
 			fmt.Println("check your internet connection")
 		} else if strings.Contains(errMsg, "timeout") {
-			fmt.Println("fatal: TLS handshake timeout with", host)
+			fmt.Println(ColorRed + "fatal:", ColorReset + "TLS handshake timeout with", host)
 			fmt.Println("the server may be down or unreachable")
 		} else {
-			fmt.Println("fatal: TLS handshake failed with", host)
+			fmt.Println(ColorRed + "fatal:", ColorReset + "TLS handshake failed with", host)
 		}
 		conn.Close()
 		return nil, err
@@ -121,7 +121,7 @@ func httpGet(conn *tls.Conn, host string, path string) error {
 
 	_, err := conn.Write([]byte(request))
 	if err != nil {
-		fmt.Println("fatal: failed to send request to", host)
+		fmt.Println(ColorRed + "fatal:", ColorReset + "failed to send request to", host)
 		return err
 	}
 	return nil
@@ -132,20 +132,20 @@ func readResponse(conn *tls.Conn, dest string) error {
 	// Lire toute la réponse
 	data, err := io.ReadAll(conn)
 	if err != nil {
-		fmt.Println("fatal: failed to read response")
+		fmt.Println(ColorRed + "fatal:", ColorReset + "failed to read response")
 		return err
 	}
 
 	// Vérifier le code HTTP
 	response := string(data)
 	if strings.Contains(response, "HTTP/1.1 404") {
-		fmt.Println("fatal: file not found on server (404)")
+		fmt.Println(ColorRed + "fatal:", ColorReset + "file not found on server (404)")
 		return fmt.Errorf("404")
 	} else if strings.Contains(response, "HTTP/1.1 403") {
-		fmt.Println("fatal: access denied (403)")
+		fmt.Println(ColorRed + "fatal:", ColorReset + "access denied (403)")
 		return fmt.Errorf("403")
 	} else if !strings.Contains(response, "HTTP/1.1 200") {
-		fmt.Println("fatal: unexpected server response")
+		fmt.Println(ColorRed + "fatal:", ColorReset + "unexpected server response")
 		return fmt.Errorf("unexpected response")
 	}
 
@@ -153,7 +153,7 @@ func readResponse(conn *tls.Conn, dest string) error {
 	separator := "\r\n\r\n"
 	index := strings.Index(response, separator)
 	if index == -1 {
-		fmt.Println("fatal: invalid server response")
+		fmt.Println(ColorRed + "fatal:", ColorReset + "invalid server response")
 		return fmt.Errorf("invalid response")
 	}
 
@@ -163,9 +163,23 @@ func readResponse(conn *tls.Conn, dest string) error {
 	// Écrire dans le fichier
 	err = os.WriteFile(dest, body, 0644)
 	if err != nil {
-		fmt.Println("fatal: cannot write file:", dest)
+		fmt.Println(ColorRed + "fatal:", ColorReset + "cannot write file:", dest)
 		return err
 	}
 
 	return nil
+}
+
+func netDownloadCached(url string, dest string, expectedMd5 string) bool {
+	if _, err := os.Stat(dest); err == nil {
+		if expectedMd5 != "" {
+			actual, err := md5File(dest)
+			if err == nil && actual == expectedMd5 {
+				return true // déjà en cache et valide
+			}
+		} else {
+			return true // en cache, pas de md5 à vérifier
+		}
+	}
+	return netDownload(url, dest)
 }
