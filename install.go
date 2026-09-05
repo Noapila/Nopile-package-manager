@@ -136,12 +136,20 @@ func installBinary(name string, force bool, reinstall bool) bool {
 			if owner == name {
 				continue
 			} else if owner != "" {
-				fmt.Println(ColorRed + "error:", ColorReset + "conflict with package:", owner, "->", line)
-				conflict = true
+				if !force {
+					fmt.Println(ColorRed + "error:", ColorReset + "conflict with package:", owner, "->", line)
+					conflict = true
+				} else {
+					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with package:", owner, "->", line "it will be overwrited")
+				}
 			} else {
 				if reinstall { continue }
-				fmt.Println(ColorRed + "error:", ColorReset + "file already exists:", line)
-				conflict = true
+				if !force {
+					fmt.Println(ColorRed + "error:", ColorReset + "file already exists:", line)
+					conflict = true
+				} else {
+					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with" line, "it will be overwrited")
+				}
 			}
 		}
 	}
@@ -150,7 +158,7 @@ func installBinary(name string, force bool, reinstall bool) bool {
 			fmt.Println("aborting")
 			return false
 		}
-		fmt.Println("forcing installation")
+		fmt.Println("overwriting conflicts files")
 	}
 
 	// Exécuter le nopbuild
