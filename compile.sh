@@ -67,6 +67,7 @@ mkdir -p /var/cache/nopile || exit 1
 cp ./nopile /usr/bin/nopile || exit 1
 echo "Nopile installed Succesfully !"
 EOF
+chmod +x install.sh
 
 echo "==> [4/4] Cleaning files"
 log "nopile-mini: rm -rf $HOME/.cache/go-build/"
