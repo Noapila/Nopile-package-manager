@@ -128,7 +128,9 @@ func installBinary(name string, force bool, reinstall bool) bool {
 	for _, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "[CONFIG]" { inConfig = true; continue }
+		if line == "[DIRS]" { inDirs = true; continue }
 		if len(line) > 0 && line[0] == '[' { inConfig = false; continue }
+		if inDirs { continue } // Ignorer les dossiers dans les conflits
 		if inConfig { continue }
 		if len(line) == 0 || line[0] != '/' { continue }
 		if _, statErr := os.Stat(line); statErr == nil {
