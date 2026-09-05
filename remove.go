@@ -68,7 +68,7 @@ func removePackage(name string, config bool) bool {
 			if inConfig {
 				if config {
 					os.Remove(currentFile)
-					vlog(ColorGray + "removed config:", currentFile)
+					vlog(ColorGray + "removed config:", currentFile + ColorReset)
 				} else if actualMd5 != expectedMd5 {
 					fmt.Println(ColorBlue + "info:", ColorReset + "skipping modified config:", currentFile)
 				} else {
@@ -79,7 +79,7 @@ func removePackage(name string, config bool) bool {
 					modifiedFiles = append(modifiedFiles, currentFile)
 				} else {
 					os.Remove(currentFile)
-					vlog(ColorGray + "removed:", currentFile)
+					vlog(ColorGray + "removed:", currentFile + ColorReset)
 				}
 			}
 			currentFile = ""
@@ -97,7 +97,7 @@ func removePackage(name string, config bool) bool {
 		}
 		if len(entries) == 0 {
 			os.Remove(dir)
-			vlog(ColorGray + "removed dir:", dir)
+			vlog(ColorGray + "removed dir:", dir + ColorReset)
 		} else {
 			fmt.Println(ColorYellow + "warning:", ColorReset + "keeping non-empty dir:", dir)
 		}
@@ -117,7 +117,7 @@ func removePackage(name string, config bool) bool {
 			if answer == "y" || answer == "Y" {
 				for _, f := range modifiedFiles {
 					os.Remove(f)
-					vlog("removed:", f)
+					vlog(ColorGray + "removed:", f + ColorReset)
 				}
 			}
 		}
@@ -125,7 +125,7 @@ func removePackage(name string, config bool) bool {
 			fmt.Println("y")
 			for _, f := range modifiedFiles {
 				os.Remove(f)
-				vlog("removed:", f)
+				vlog(ColorGray + "removed:", f + ColorReset)
 			}
 		}
 	}

@@ -54,7 +54,7 @@ func runNopbuild(path string, dir string) bool {
 		}
 		line = strings.ReplaceAll(line, "$(nproc)", fmt.Sprintf("%d", runtime.NumCPU()))
 		if strings.HasPrefix(line, "install ") {
-			vlog(ColorGray + "nopbuild:", line)
+			vlog(ColorGray + "nopbuild:", line + ColorReset)
 			parts := strings.Fields(line)
 			if len(parts) != 3 {
 				fmt.Println(ColorRed + "error:", ColorReset + "invalid install syntax:", line)
@@ -67,7 +67,7 @@ func runNopbuild(path string, dir string) bool {
 			continue
 		}
 		if strings.HasPrefix(line, "config ") {
-			vlog(ColorGray + "nopbuild:", line)
+			vlog(ColorGray + "nopbuild:", line + ColorReset)
 			parts := strings.Fields(line)
 			if len(parts) != 3 {
 				fmt.Println(ColorRed + "error:", ColorReset + "invalid config syntax:", line)
@@ -83,7 +83,7 @@ func runNopbuild(path string, dir string) bool {
 			}
 			continue
 		}
-		vlog(ColorGray + "nopbuild:", line)
+		vlog(ColorGray + "nopbuild:", line + ColorReset)
 		if !runCmd(line, dir) {
 			fmt.Println(ColorRed + "error:", ColorReset + "command failed:", line)
 			return false
@@ -156,7 +156,7 @@ func installBinary(name string, force bool, reinstall bool) bool {
 
 	// Exécuter le nopbuild
 	nopbuild := tmpDir + "/install.nopbuild"
-	vlog(ColorGray + "executing nopbuild")
+	vlog(ColorGray + "executing nopbuild" + ColorReset)
 	if !runNopbuild(nopbuild, tmpDir) {
 		return false
 	}
