@@ -140,7 +140,7 @@ func installBinary(name string, force bool, reinstall bool) bool {
 					fmt.Println(ColorRed + "error:", ColorReset + "conflict with package:", owner, "->", line)
 					conflict = true
 				} else {
-					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with package:", owner, "->", line "it will be overwrited")
+					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with package:", owner, "->", line, "it will be overwrited")
 				}
 			} else {
 				if reinstall { continue }
@@ -148,7 +148,7 @@ func installBinary(name string, force bool, reinstall bool) bool {
 					fmt.Println(ColorRed + "error:", ColorReset + "file already exists:", line)
 					conflict = true
 				} else {
-					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with" line, "it will be overwrited")
+					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with", line, "it will be overwrited")
 				}
 			}
 		}
