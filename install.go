@@ -42,6 +42,10 @@ func runNopbuild(path string, dir string) bool {
 		return false
 	}
 	defer f.Close()
+
+	section := ""
+	skippedConfigure := false
+
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -49,9 +53,14 @@ func runNopbuild(path string, dir string) bool {
 			continue
 		}
 		if line[0] == '[' {
+			section = line
+			continue
+		}
+		if section != "[BUILD]" && section != "[INSTALL]" {
 			continue
 		}
 		line = strings.ReplaceAll(line, "$(nproc)", fmt.Sprintf("%d", runtime.NumCPU()))
+		line = strings.ReplaceAll(line, "DESTDIR=root", "DESTDIR="+dir+"/root")
 		if strings.HasPrefix(line, "install ") {
 			vlog(ColorGray + "nopbuild:", line + ColorReset)
 			parts := strings.Fields(line)
@@ -82,11 +91,41 @@ func runNopbuild(path string, dir string) bool {
 			}
 			continue
 		}
+		if section == "[BUILD]" && strings.HasPrefix(line, "./configure") {
+			_, hasMakefile     := os.Stat(filepath.Join(dir, "Makefile"))
+			_, hasConfigStatus := os.Stat(filepath.Join(dir, "config.status"))
+			if hasMakefile == nil && hasConfigStatus == nil {
+				vlog("nopbuild: skipping configure (already configured)")
+				skippedConfigure = true
+				continue
+			}
+			skippedConfigure = false
+		}
 		vlog(ColorGray + "nopbuild:", line + ColorReset)
 		if !runCmd(line, dir) {
-			fmt.Println(ColorRed + "error:", ColorReset + "command failed:", line)
-			return false
+			if skippedConfigure && strings.HasPrefix(line, "make") {
+				fmt.Println(ColorYellow + "warning:", ColorReset + "build failed, re-trying...")
+				for sc2 := bufio.NewScanner(func() *os.File { f2, _ := os.Open(path); return f2 }()); sc2.Scan(); {
+					l := sc2.Text()
+					if strings.HasPrefix(l, "./configure") {
+						vlog(ColorGray + "nopbuild:", l + ColorReset)
+						if !runCmd(l, dir) {
+							fmt.Println(ColorRed + "error:", ColorReset + "configure failed")
+							return false
+						}
+						break
+					}
+				}
+				if !runCmd(line, dir) {
+					fmt.Println(ColorRed + "error:", ColorReset + "build failed:", line)
+					return false
+				}
+			} else {
+				fmt.Println(ColorRed + "error:", ColorReset + "command failed:", line)
+				return false
+			}
 		}
+		skippedConfigure = false
 	}
 	return true
 }
@@ -144,6 +183,7 @@ func installBinary(name string, force bool, reinstall bool) bool {
 					conflict = true
 				} else {
 					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with package:", owner, "->", line, "it will be overwrited")
+					conflict = true
 				}
 			} else {
 				if reinstall { continue }
@@ -152,6 +192,7 @@ func installBinary(name string, force bool, reinstall bool) bool {
 					conflict = true
 				} else {
 					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with", line, "it will be overwrited")
+					conflict = true
 				}
 			}
 		}
@@ -261,63 +302,13 @@ func installCompile(name string, force bool, reinstall bool) bool {
 		return false
 	}
 
-	os.MkdirAll(rootDir, 0755)
-
-	vlog(ColorGray + "executing nopbuild" + ColorReset)
-	skippedConfigure := false
-
-	for _, cmd := range nb.BuildCmds {
-		cmd = strings.ReplaceAll(cmd, "$(nproc)", fmt.Sprintf("%d", runtime.NumCPU()))
-
-		if strings.HasPrefix(cmd, "./configure") {
-			_, hasMakefile     := os.Stat(filepath.Join(srcDir, "Makefile"))
-			_, hasConfigStatus := os.Stat(filepath.Join(srcDir, "config.status"))
-			if hasMakefile == nil && hasConfigStatus == nil {
-				vlog("nopbuild: skipping configure (already configured)")
-				skippedConfigure = true
-				continue
-			}
-			skippedConfigure = false
-		}
-
-		vlog(ColorGray + "nopbuild:", cmd + ColorReset)
-		if !runCmd(cmd, srcDir) {
-			if skippedConfigure && strings.HasPrefix(cmd, "make") {
-				fmt.Println(ColorYellow + "warning:", ColorReset + "build failed, re-trying...")
-				for _, buildCmd := range nb.BuildCmds {
-					if strings.HasPrefix(buildCmd, "./configure") {
-						vlog(ColorGray + "nopbuild:", buildCmd + ColorReset)
-						if !runCmd(buildCmd, srcDir) {
-							fmt.Println(ColorRed + "error:", ColorReset + "configure failed")
-							return false
-						}
-						break
-					}
-				}
-				vlog(ColorGray + "nopbuild:", cmd + ColorReset)
-				if !runCmd(cmd, srcDir) {
-					fmt.Println(ColorRed + "error:", ColorReset + "build failed:", cmd)
-					return false
-				}
-			} else {
-				fmt.Println(ColorRed + "error:", ColorReset + "build failed:", cmd)
-				return false
-			}
-		}
-	}
-
 	vlog(ColorGray + "cleaning root/..." + ColorReset)
 	os.RemoveAll(rootDir)
 	os.MkdirAll(rootDir, 0755)
 
-	vlog(ColorGray + "installing into root/..." + ColorReset)
-	for _, cmd := range nb.InstallCmds {
-		cmd = strings.ReplaceAll(cmd, "DESTDIR=root", "DESTDIR="+rootDir)
-		fmt.Println("nopbuild:", cmd)
-		if !runCmd(cmd, srcDir) {
-			fmt.Println(ColorRed + "error:", ColorReset + "install failed:", cmd)
-			return false
-		}
+	vlog(ColorGray + "executing nopbuild" + ColorReset)
+	if !runNopbuild(nopbuildPath, srcDir) {
+		return false
 	}
 
 	vlog(ColorGray + "scanning files..." + ColorReset)
@@ -355,7 +346,6 @@ func installCompile(name string, force bool, reinstall bool) bool {
 	vlog(ColorGray + "found", len(installedFiles), "files" + ColorReset)
 	vlog(ColorGray + "found", len(installedDirs), "directories" + ColorReset)
 
-	// Vérifier les conflits
 	conflict := false
 	for _, entry := range installedFiles {
 		realPath := strings.Split(entry, "|")[0]
@@ -365,16 +355,22 @@ func installCompile(name string, force bool, reinstall bool) bool {
 			if owner == name {
 				continue
 			} else if owner != "" {
-				fmt.Println(ColorRed + "error:", ColorReset + "conflict with package:", owner, "->", realPath)
-				conflict = true
-			} else {
-				// Fichier sans propriétaire
-				if reinstall {
-					// En réinstallation on écrase sans erreur
-					continue
+				if !force {
+					fmt.Println(ColorRed + "error:", ColorReset + "conflict with package:", owner, "->", realPath)
+					conflict = true
+				} else {
+					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with package:", owner, "->", realPath, "it will be overwrited")
+					conflict = true
 				}
-				fmt.Println(ColorRed + "error:", ColorReset + "file already exists:", realPath)
-				conflict = true
+			} else {
+				if reinstall { continue }
+				if !force {
+					fmt.Println(ColorRed + "error:", ColorReset + "file already exists:", realPath)
+					conflict = true
+				} else {
+					fmt.Println(ColorYellow + "warning:", ColorReset + "conflict with", realPath, "it will be overwrited")
+					conflict = true
+				}
 			}
 		}
 	}
@@ -383,7 +379,7 @@ func installCompile(name string, force bool, reinstall bool) bool {
 			fmt.Println("aborting")
 			return false
 		}
-		fmt.Println("forcing installation")
+		fmt.Println("overwriting conflicts files")
 	}
 
 	// 9. Créer le .nopile

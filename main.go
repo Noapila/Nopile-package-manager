@@ -925,7 +925,7 @@ func cmdWho() {
 
 func cmdHelp() {
     fmt.Print(`
-    Nopile 1.0.0 - Noapila OS package manager
+    Nopile 1.0.1 - Noapila OS package manager
 
     Usage:
     nopile  <command> [options]
@@ -956,8 +956,8 @@ func cmdHelp() {
     Update options:
  -s --sync               sync the database
 
-    Global options
- -v --verbose            enable verbosity
+    Global options:
+ -v --verbose            toggle verbosity
  -y --yes                automatically responds "y" to question
  -n --no                 automatically responds "n" to question
 
