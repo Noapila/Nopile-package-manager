@@ -11,7 +11,7 @@ const NOPILE_DB      = "/var/lib/nopile/nopile.db"
 const NOPILE_PKG_DIR = "/var/lib/nopile/packages"
 const NOPILE_CACHE   = "/var/cache/nopile"
 const NOPILE_REPO    = "https://raw.githubusercontent.com/Noapila/Nopile-package-manager-repo/main"
-const VERSION        = "1.1.0"
+const VERSION        = "1.1.1"
 
 type database struct {
 	Nom       string

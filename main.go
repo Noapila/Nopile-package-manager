@@ -942,7 +942,7 @@ func cmdWho() {
 
 func cmdHelp() {
     fmt.Print(`
-    Nopile 1.1.0 - Noapila OS package manager
+    Nopile 1.1.1 - Noapila OS package manager
 
     Usage:
     nopile  <command> [options]

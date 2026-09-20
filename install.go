@@ -56,7 +56,7 @@ func runNopbuild(path string, dir string) bool {
 			section = line
 			continue
 		}
-		if section != "[BUILD]" && section != "[INSTALL]" {
+		if section != "[BUILD]" && section != "[INSTALL]" && section != "[PACKAGE]" {
 			continue
 		}
 		line = strings.ReplaceAll(line, "$(nproc)", fmt.Sprintf("%d", runtime.NumCPU()))
@@ -91,7 +91,7 @@ func runNopbuild(path string, dir string) bool {
 			}
 			continue
 		}
-		if strings.HasPrefix(line, "file ") {
+		if strings.HasPrefix(line, "dir ") {
 			parts := strings.Fields(line)
 			if len(parts) != 2 {
 				fmt.Println(ColorRed + "error:", ColorReset + "invalid file syntax:", line)
