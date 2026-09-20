@@ -91,6 +91,34 @@ func runNopbuild(path string, dir string) bool {
 			}
 			continue
 		}
+		if strings.HasPrefix(line, "file ") {
+			parts := strings.Fields(line)
+			if len(parts) != 2 {
+				fmt.Println(ColorRed + "error:", ColorReset + "invalid file syntax:", line)
+				return false
+			}
+			vlog(ColorGray + "nopbuild:", line + ColorReset)
+			if err := os.MkdirAll(parts[1], 0755); err != nil {
+				fmt.Println(ColorRed + "error:", ColorReset + "cannot create directory:", parts[1])
+				return false
+			}
+			continue
+		}
+
+		if strings.HasPrefix(line, "link ") {
+			parts := strings.Fields(line)
+			if len(parts) != 3 {
+				fmt.Println(ColorRed + "error:", ColorReset + "invalid link syntax:", line)
+				return false
+			}
+			vlog(ColorGray + "nopbuild:", line + ColorReset)
+			os.Remove(parts[2])
+			if err := os.Symlink(parts[1], parts[2]); err != nil {
+				fmt.Println(ColorRed + "error:", ColorReset + "cannot create symlink:", parts[2])
+				return false
+			}
+			continue
+		}
 		if section == "[BUILD]" && strings.HasPrefix(line, "./configure") {
 			_, hasMakefile     := os.Stat(filepath.Join(dir, "Makefile"))
 			_, hasConfigStatus := os.Stat(filepath.Join(dir, "config.status"))

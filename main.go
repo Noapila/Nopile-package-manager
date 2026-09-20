@@ -56,10 +56,22 @@ func main() {
 
 	// Choisir quoi faire selon la commande
 	if commande == "install" || commande == "-i" {
+		if os.Getuid() != 0 {
+			fmt.Println(ColorRed + "error:", ColorReset + "must be run as administrator")
+			os.Exit(1)
+		}
 		cmdInstall()
 	} else if commande == "remove" || commande == "-r" {
+		if os.Getuid() != 0 {
+			fmt.Println(ColorRed + "error:", ColorReset + "must be run as administrator")
+			os.Exit(1)
+		}
 		cmdRemove()
 	} else if commande == "update" || commande == "-u" {
+		if os.Getuid() != 0 {
+			fmt.Println(ColorRed + "error:", ColorReset + "must be run as administrator")
+			os.Exit(1)
+		}
 		cmdUpdate()
 	} else if commande == "search" || commande == "-S" {
 		cmdSearch()
@@ -70,13 +82,17 @@ func main() {
 	} else if commande == "verify" || commande == "-V" {
 		cmdVerify()
 	} else if commande == "clean" || commande == "-c" {
+		if os.Getuid() != 0 {
+			fmt.Println(ColorRed + "error:", ColorReset + "must be run as administrator")
+			os.Exit(1)
+		}
 		cmdClean()
 	} else if commande == "help" || commande == "-h" {
 		cmdHelp()
 	} else if commande == "--sync" || commande == "-s" {
 		if os.Getuid() != 0 {
-			fmt.Println(ColorRed + "error:", ColorReset + "nopile --sync must be run as administrator")
-			return
+			fmt.Println(ColorRed + "error:", ColorReset + "must be run as administrator")
+			os.Exit(1)
 		}
 		dbSync()
 	} else if commande == "who" || commande == "-w" {
@@ -688,8 +704,9 @@ func cmdUpdate() {
 	}
 
 	// 6. Mettre à jour les paquets
-	for _, u := range toUpdate {
-		fmt.Println("updating:", u.name, u.oldVersion, "→", u.newVersion)
+	total := len(toUpdate)
+	for i, u := range toUpdate {
+		fmt.Printf("[%d/%d] Updating %s\n", i+1, total, u.name)
 		var ok bool
 		if u.action == "binary" {
 			ok = installBinary(u.name, false, true)
@@ -925,7 +942,7 @@ func cmdWho() {
 
 func cmdHelp() {
     fmt.Print(`
-    Nopile 1.0.1 - Noapila OS package manager
+    Nopile 1.1.0 - Noapila OS package manager
 
     Usage:
     nopile  <command> [options]
