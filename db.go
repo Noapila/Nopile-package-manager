@@ -76,5 +76,6 @@ func dbSync() {
 		fmt.Println("database synced")
 	} else {
 		fmt.Println(ColorRed + "fatal:", ColorReset + "failed to sync database")
+  os.Exit(2)
 	}
 }
