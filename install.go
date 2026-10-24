@@ -825,7 +825,7 @@ func postAll(toInstall []entry) bool {
 			fmt.Printf("[%d/%d] Executing post-transaction for %s\n", n, total, e.name)
 			for _, cmd := range nb.PostCmds {
 				cmd = strings.ReplaceAll(cmd, "$(nproc)", fmt.Sprintf("%d", runtime.NumCPU()))
-				vlog(ColorGray + "post:", cmd)
+				vlog(ColorGray + "post:", cmd + ColorReset)
 				if !runCmd(cmd, "/") {
 					fmt.Printf(ColorRed + "error:", ColorReset + "post-transaction failed for %s: %s\n", e.name, cmd)
 					mu.Lock()
