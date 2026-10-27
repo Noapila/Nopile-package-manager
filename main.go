@@ -815,7 +815,7 @@ func cmdInfo() {
 		os.Exit(1)
 	}
 	for _, name := range os.Args[2:] {
-		if name[0] == '-' {
+	 if len(name) == 0 || name[0] == '-' {
 			fmt.Println(ColorRed + "error:", ColorReset + "invalid syntax")
 			fmt.Println("usage: nopile info <package>")
 			os.Exit(1)
