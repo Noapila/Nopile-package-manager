@@ -73,7 +73,7 @@ func main() {
 			os.Exit(1)
 		}
 		cmdUpdate()
-	} else if commande == "search" || commande == "-S" {
+	} else if commande == "search" || commande == "-s" {
 		cmdSearch()
 	} else if commande == "list" || commande == "-l" {
 		cmdList()
@@ -87,9 +87,9 @@ func main() {
 			os.Exit(1)
 		}
 		cmdClean()
-	} else if commande == "help" || commande == "-h" {
+	} else if commande == "help" || commande == "-h" || commande == "--help" {
 		cmdHelp()
-	} else if commande == "--sync" || commande == "-s" {
+	} else if commande == "--sync" || commande == "-S" {
 		if os.Getuid() != 0 {
 			fmt.Println(ColorRed + "error:", ColorReset + "must be run as administrator")
 			os.Exit(1)
@@ -945,7 +945,7 @@ func cmdHelp() {
     Nopile 1.1.2 - Noapila OS package manager
 
     Usage:
-    nopile  <command> [options]
+    nopile  <command> <options>
 
     Commands:
  -i install <package>    install a package
@@ -962,7 +962,7 @@ func cmdHelp() {
     Install options:
  -c --compile            compile the packages from source
  -b --binary             install the binary package
- -l --local <file>       install from a local file
+ -l --local              install from a local file
  -f --force              overwrite conflicts files
 
     Remove options:
@@ -971,7 +971,7 @@ func cmdHelp() {
  -a --all                alias of --deps and --config
 
     Update options:
- -s --sync               sync the database
+ -S --sync               sync the database
 
     Global options:
  -v --verbose            toggle verbosity
