@@ -65,8 +65,6 @@ func extractTarball(path string, dest string, stripComponents int) bool {
 			fmt.Println(ColorRed + "error:", ColorReset + "extraction error:", err)
 			return false
 		}
-
-		// Strip components
 		parts := strings.SplitN(header.Name, "/", stripComponents+1)
 		if len(parts) <= stripComponents {
 			continue
@@ -75,14 +73,39 @@ func extractTarball(path string, dest string, stripComponents int) bool {
 		if relPath == "" { continue }
 
 		target := filepath.Join(dest, relPath)
-
+		if !filepath.IsLocal(relPath) {
+			fmt.Println(ColorRed+"fatal:", ColorReset+"malicious archive detected")
+			fmt.Println("zip slip detected")
+			fmt.Println("exiting now, no changes will be done to the system")
+			fmt.Println("system protected")
+			return false
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			return false
+		}
+		realDir, err := filepath.EvalSymlinks(filepath.Dir(target))
+		if err != nil {
+			return false
+		}
+		realDest, err := filepath.EvalSymlinks(dest)
+		if err != nil {
+			return false
+		}
+		rel, err := filepath.Rel(realDest, realDir)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, "../") {
+			fmt.Println(ColorRed+"fatal:", ColorReset+"malicious archive detected")
+			fmt.Println("symlink escape detected")
+			fmt.Println("exiting now, no changes will be done to the system")
+			fmt.Println("system protected")
+			return false
+		}
 		switch header.Typeflag {
 			case tar.TypeDir:
 				os.MkdirAll(target, os.FileMode(header.Mode))
 				os.Chtimes(target, header.AccessTime, header.ModTime)
 			case tar.TypeReg:
-				os.MkdirAll(filepath.Dir(target), 0755)
-				outFile, err := os.Create(target)
+				os.Remove(target)
+				outFile, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 				if err != nil {
 					fmt.Println(ColorRed + "error:", ColorReset + "cannot create file:", target)
 					return false
@@ -90,10 +113,19 @@ func extractTarball(path string, dest string, stripComponents int) bool {
 				io.Copy(outFile, tr)
 				outFile.Close()
 				os.Chmod(target, os.FileMode(header.Mode))
-				// Préserver les timestamps
 				os.Chtimes(target, header.AccessTime, header.ModTime)
 			case tar.TypeSymlink:
-				os.Symlink(header.Linkname, target)
+				if !filepath.IsAbs(header.Linkname) && !filepath.IsLocal(filepath.Join(filepath.Dir(relPath), header.Linkname)) {
+					fmt.Println(ColorRed+"fatal:", ColorReset+"malicious archive detected")
+					fmt.Println("symlink escape detected")
+					fmt.Println("exiting now, no changes will be done to the system")
+					fmt.Println("system protected")
+					return false
+				}
+				os.Remove(target)
+				if err := os.Symlink(header.Linkname, target); err != nil {
+					return false
+				}
 		}
 	}
 	return true
